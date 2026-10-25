@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+# Üçüncü parti dosyalar olduğu gibi kalsın (parmak izleri değişmesin)
+vendor/** -text
+fonts/** -text

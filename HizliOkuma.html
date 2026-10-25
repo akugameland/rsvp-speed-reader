@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Gizlilik: tamamen çevrimdışı. Sayfa sadece kendi klasöründeki dosyaları yükleyebilir; internete hiç bağlanamaz.
+     Aynı kural sunucu.py tarafından başlık olarak da gönderilir (OCR işçisi de bu kurala tabi olur).
+     Satır içi betik yasak (unsafe-inline yok): bütün kod app.js içinde; sızan bir HTML parçası kod çalıştıramaz. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; font-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Hızlı Okuma</title>
+<!-- Fotoğraftan metin okuma (OCR): Tesseract.js 5.1.1, vendor/ klasöründen, tarayıcının içinde çalışır.
+     integrity: dosya değiştirilmişse tarayıcı onu çalıştırmaz. -->
+<script defer src="vendor/tesseract/tesseract.min.js"
+  integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F"></script>
+<style>
+/* Poppins (OFL lisansı, fonts/OFL.txt): yerelden yüklenir, Google'a bağlanılmaz. latin-ext Türkçe ğ ş İ için */
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url(fonts/poppins-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Poppins';font-weight:400;font-display:swap;src:url(fonts/poppins-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url(fonts/poppins-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Poppins';font-weight:600;font-display:swap;src:url(fonts/poppins-latin-ext-600-normal.woff2) format('woff2');unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url(fonts/poppins-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Poppins';font-weight:700;font-display:swap;src:url(fonts/poppins-latin-ext-700-normal.woff2) format('woff2');unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Poppins';font-weight:800;font-display:swap;src:url(fonts/poppins-latin-800-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Poppins';font-weight:800;font-display:swap;src:url(fonts/poppins-latin-ext-800-normal.woff2) format('woff2');unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{
+  --bg:#121418; --panel:#1b1e24; --panel2:#242830; --text:#e9e9e9; --muted:#9aa1ab;
+  --line:#323743; --accent:#f5c518; --danger:#e5534b; --ok:#3fb950;
+  --stage-bg:#0d0f12; --stage-text:#f2f2f2; --focus:#f5c518;
+  --stage-font:'Segoe UI', system-ui, sans-serif; --stage-size:64px; --stage-weight:400;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:15px/1.5 'Segoe UI',system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+button.danger:hover{border-color:var(--danger);color:var(--danger)}
+button:disabled{opacity:.45;cursor:default}
+input[type=text],input[type=number],input[type=search],select,textarea{
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+input[type=color]{width:44px;height:32px;border:1px solid var(--line);border-radius:6px;background:none;padding:2px}
+input[type=range]{accent-color:var(--accent);width:100%}
+input[type=checkbox]{accent-color:var(--accent);width:17px;height:17px;vertical-align:middle}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+
+header{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header .wrap{display:flex;align-items:center;gap:18px;height:56px}
+.logo{font-weight:700;font-size:18px;white-space:nowrap}
+.logo b{color:var(--accent)}
+nav{display:flex;gap:4px;overflow-x:auto}
+nav button{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;padding:16px 12px;color:var(--muted);white-space:nowrap}
+nav button.active{color:var(--text);border-bottom-color:var(--accent)}
+.tab{display:none;padding:22px 0 60px}
+.tab.active{display:block}
+h2{font-size:17px;margin:0 0 12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.grow{flex:1}
+
+/* ---------- Okuyucu ---------- */
+#stage{position:relative;background:var(--stage-bg);color:var(--stage-text);border-radius:14px;
+  height:max(300px, calc(var(--stage-size) * 5));display:flex;flex-direction:column;justify-content:center;overflow:hidden;cursor:pointer;user-select:none}
+#stage:fullscreen{border-radius:0;height:100vh}
+.word{display:flex;align-items:baseline;font-family:var(--stage-font);font-size:var(--stage-size);
+  font-weight:var(--stage-weight);white-space:pre;line-height:1.2;position:relative;z-index:0}
+.word .l{flex:1;text-align:right}
+.word .r{flex:1;text-align:left}
+.word .p{color:var(--focus)}
+.fs-bold .word .p{font-weight:800}
+.fs-underline .word .p{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+/* Sarı blok: harf yazı renginde kalır, arkasında yazı yüksekliğini aşan düz renkli dikdörtgen */
+/* Bloktaki harf kendi rengini alır (--focus-text): açık blokta koyu harf, yoksa harf ince ve sönük görünür */
+.fs-block .word .p{color:var(--focus-text);position:relative}
+.fs-block .word .p::before{content:'';position:absolute;z-index:-1;top:-.15em;bottom:-.13em;left:-.06em;right:-.06em;background:var(--focus)}
+/* Sarı gölge: harf yazı renginde kalır, arkasında yumuşak renkli bir hale olur. Negatif kenar boşluğu hizayı bozmaz */
+.fs-glow .word .p{color:inherit;--g:color-mix(in srgb, var(--focus) var(--glow), transparent);
+  background:radial-gradient(ellipse 50% 44% at 50% 54%, var(--g) 0%, var(--g) 32%, transparent 100%);
+  text-shadow:0 0 .12em var(--g);padding:0 .36em;margin:0 -.36em}
+/* Vurgu: harfi kapatmaz; yarı saydam şerit sadece harf yüksekliğinde, negatif kenar boşluğu hizayı bozmaz */
+.fs-box .word .p{--hl:color-mix(in srgb, var(--focus) 30%, transparent);
+  background:linear-gradient(to bottom, transparent 22%, var(--hl) 22%, var(--hl) 86%, transparent 86%);
+  padding:0 .12em;margin:0 -.12em;border-radius:.08em}
+.guide{position:absolute;left:50%;width:2px;height:22px;background:var(--focus);opacity:.55;transform:translateX(-1px)}
+.guide.t{top:calc(50% - var(--stage-size)*.75 - 22px)}
+.guide.b{top:calc(50% + var(--stage-size)*.75)}
+.guide-line{position:absolute;left:8%;right:8%;height:1px;background:var(--stage-text);opacity:.12}
+.guide-line.t{top:calc(50% - var(--stage-size)*.75)}
+.guide-line.b{top:calc(50% + var(--stage-size)*.75)}
+/* Üçgen işaretler: odak harfinin üstünde aşağı, altında yukarı bakan üçgen. Boyutlar yazı boyutuna göre */
+.mk-triangle .guide{font-size:var(--stage-size);width:0;height:0;background:none;opacity:1;transform:translateX(-50%);
+  border-left:.42em solid transparent;border-right:.42em solid transparent}
+.mk-triangle .guide.t{top:calc(50% - 2.15em);border-top:1.09em solid var(--focus)}
+.mk-triangle .guide.b{top:calc(50% + 1.05em);border-bottom:1.09em solid var(--focus)}
+.mk-triangle .guide-line,.mk-none .guide,.mk-none .guide-line{display:none}
+#stageMsg{position:absolute;left:16px;bottom:12px;font-size:13px;opacity:.55}
+#countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:90px;color:var(--focus);background:var(--stage-bg)}
+#context{margin-top:12px;min-height:48px;color:var(--muted);font-size:16px;line-height:1.6}
+#context mark{background:none;color:var(--accent);font-weight:600}
+.progress{height:8px;background:var(--panel2);border-radius:4px;cursor:pointer;margin-top:14px;position:relative}
+.progress>div{height:100%;background:var(--accent);border-radius:4px;width:0}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.controls .wpm{display:flex;align-items:center;gap:8px;flex:1;min-width:220px}
+.controls .wpm input{max-width:260px}
+#wpmVal{min-width:92px;font-weight:600}
+.keys{font-size:12px;color:var(--muted);margin-top:10px}
+kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:11px}
+#fullText{max-height:340px;overflow:auto;line-height:1.8;font-size:15px;display:none}
+#fullText span{cursor:pointer;border-radius:3px}
+#fullText span:hover{background:var(--panel2)}
+#fullText span.cur{background:var(--accent);color:#111}
+#fullText p{margin:0 0 10px}
+
+/* ---------- Metin ekleme ---------- */
+#drop{border:2px dashed var(--line);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:.15s}
+#drop.over,#drop:hover{border-color:var(--accent);background:rgba(245,197,24,.05)}
+#drop .big{font-size:17px;font-weight:600}
+#thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#thumbs .th{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+#thumbs .th img{width:100%;height:100%;object-fit:cover}
+#thumbs .th .st{position:absolute;inset:auto 0 0 0;background:rgba(0,0,0,.7);font-size:11px;text-align:center;padding:2px}
+#ocrBar{height:6px;background:var(--panel2);border-radius:3px;margin-top:12px;display:none}
+#ocrBar>div{height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .2s}
+#ocrStatus{margin-top:6px;font-size:13px}
+textarea#textIn{width:100%;min-height:260px;resize:vertical;line-height:1.6}
+#titleIn{width:100%}
+
+/* ---------- Kütüphane ---------- */
+.doc{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.doc:last-child{border-bottom:none}
+.doc .info{flex:1;min-width:0}
+.doc .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc .mini{height:4px;background:var(--panel2);border-radius:2px;margin-top:6px;max-width:320px}
+.doc .mini>div{height:100%;background:var(--accent);border-radius:2px}
+.doc .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.doc .acts button{padding:5px 10px;font-size:13px}
+.badge{display:inline-block;font-size:11px;padding:0 6px;border-radius:4px;background:var(--panel2);border:1px solid var(--line);margin-left:6px;color:var(--muted)}
+
+/* ---------- Ayarlar ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:16px}
+.set{display:flex;align-items:center;gap:10px;margin:10px 0;min-height:32px}
+.set label{flex:1;min-width:0;line-height:1.3}
+.set .v{min-width:44px;text-align:right;font-variant-numeric:tabular-nums;color:var(--accent)}
+.set input[type=range]{width:120px;flex:none}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.theme{padding:0;overflow:hidden;text-align:left;display:flex;flex-direction:column}
+.theme .sw{height:62px;display:flex;align-items:center;justify-content:center;font:700 26px Poppins,'Segoe UI',sans-serif;border-bottom:1px solid var(--line)}
+.theme .sw b{font-weight:inherit;padding:.1em .05em}
+.theme .nm{padding:7px 10px 0;font-size:13px;font-weight:600}
+.theme .nt{padding:0 10px 8px;font-size:11px;color:var(--muted);line-height:1.35}
+.theme.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{padding:5px 10px;font-size:13px}
+#stage.is-preview{cursor:default}
+#stage.is-preview #stageMsg{display:none!important}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);
+  padding:10px 18px;border-radius:10px;display:none;z-index:20;max-width:90vw}
+
+@media (max-width:640px){
+  #stage{height:max(220px, calc(var(--stage-size) * 5))}
+  .doc{flex-direction:column;align-items:stretch}
+  .doc .acts{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="logo">Hızlı <b>Okuma</b></div>
+  <nav>
+    <button data-tab="read" class="active">Oku</button>
+    <button data-tab="add">Metin Ekle</button>
+    <button data-tab="lib">Kütüphane</button>
+    <button data-tab="settings">Ayarlar</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+
+<!-- ================= OKU ================= -->
+<section id="tab-read" class="tab active">
+  <div class="row" style="margin-bottom:10px">
+    <div class="grow"><span id="docTitle" style="font-weight:600">Metin seçilmedi</span>
+      <span id="docMeta" class="muted small"></span></div>
+  </div>
+  <div id="stage">
+    <div class="guide-line t"></div><div class="guide-line b"></div>
+    <div class="guide t"></div><div class="guide b"></div>
+    <div class="word" id="word"><span class="l"></span><span class="p"></span><span class="r"></span></div>
+    <div id="countdown"></div>
+    <div id="stageMsg">Başlatmak için tıkla ya da Boşluk tuşuna bas</div>
+  </div>
+  <div class="progress" id="progress"><div></div></div>
+  <div class="row small muted" style="margin-top:6px">
+    <span id="posTxt" class="grow">0 / 0</span><span id="remainTxt"></span>
+  </div>
+  <div class="controls">
+    <button id="bRestart" title="Baştan (R)">⏮</button>
+    <button id="bSentBack" title="Önceki cümle (Ctrl+←)">«</button>
+    <button id="bBack" title="Bir kelime geri (←)">‹</button>
+    <button id="bPlay" class="primary" style="min-width:96px">▶ Başlat</button>
+    <button id="bFwd" title="Bir kelime ileri (→)">›</button>
+    <button id="bSentFwd" title="Sonraki cümle (Ctrl+→)">»</button>
+    <div class="wpm">
+      <input type="range" id="wpm" min="60" max="1500" step="10">
+      <span id="wpmVal"></span>
+    </div>
+    <button id="bText">Metni göster</button>
+    <button id="bFull" title="Tam ekran (F)">⛶ Tam ekran</button>
+  </div>
+  <div id="context"></div>
+  <div class="card" id="fullText"></div>
+  <div class="keys">
+    <kbd>Boşluk</kbd> başlat/durdur · <kbd>←</kbd><kbd>→</kbd> kelime · <kbd>Ctrl</kbd>+<kbd>←</kbd><kbd>→</kbd> cümle ·
+    <kbd>↑</kbd><kbd>↓</kbd> hız ±25 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> kelime sayısı · <kbd>R</kbd> baştan · <kbd>F</kbd> tam ekran · <kbd>Esc</kbd> çık
+  </div>
+</section>
+
+<!-- ================= METİN EKLE ================= -->
+<section id="tab-add" class="tab">
+  <div class="card">
+    <h2>Fotoğraftan metin</h2>
+    <div id="drop">
+      <div class="big">Fotoğrafı buraya sürükle, <kbd>Ctrl</kbd>+<kbd>V</kbd> ile yapıştır ya da tıklayıp seç</div>
+      <div class="muted small">Birden fazla fotoğraf seçebilirsin, sırayla tek metin olarak birleştirilir. .txt dosyası da olur.</div>
+    </div>
+    <input type="file" id="fileIn" accept="image/*,.txt,text/plain" multiple hidden>
+    <div class="row small" style="margin-top:12px">
+      <label>Dil:
+        <select id="ocrLang">
+          <option value="tur+eng">Türkçe + İngilizce</option>
+          <option value="tur">Türkçe</option>
+          <option value="eng">İngilizce</option>
+          <option value="spa">İspanyolca</option>
+          <option value="deu">Almanca</option>
+        </select></label>
+      <label><input type="checkbox" id="ocrPre"> Görüntüyü iyileştir (gri ton, kontrast, büyütme)</label>
+      <label>Yeni fotoğraf:
+        <select id="ocrMode">
+          <option value="new">Yeni metin başlat</option>
+          <option value="append">Mevcut metnin sonuna ekle</option>
+        </select></label>
+      <label><input type="checkbox" id="ocrAutoSave"> Otomatik kütüphaneye kaydet</label>
+      <label><input type="checkbox" id="ocrAutoStart"> Bitince okumaya başla</label>
+    </div>
+    <div id="thumbs"></div>
+    <div id="ocrBar"><div></div></div>
+    <div id="ocrStatus" class="muted"></div>
+  </div>
+
+  <div class="card">
+    <h2>Metin <span id="editBadge" class="badge" style="display:none"></span></h2>
+    <input type="text" id="titleIn" placeholder="Başlık (boş bırakırsan ilk kelimelerden oluşturulur)" style="margin-bottom:10px">
+    <textarea id="textIn" placeholder="Metni buraya yapıştır…"></textarea>
+    <div class="row" style="margin-top:10px">
+      <label class="small"><input type="checkbox" id="joinLines"> Satır sonlarını birleştir (PDF ve fotoğraf metinleri için)</label>
+      <span class="grow"></span>
+      <span id="wordCount" class="muted small"></span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="bSaveRead">Kaydet ve oku</button>
+      <button id="bSave">Sadece kaydet</button>
+      <button id="bReadOnly">Kaydetmeden oku</button>
+      <button id="bClean">Metni temizle</button>
+      <span class="grow"></span>
+      <button id="bNew">Yeni metin</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= KÜTÜPHANE ================= -->
+<section id="tab-lib" class="tab">
+  <div class="card">
+    <div class="row" style="margin-bottom:8px">
+      <input type="search" id="libSearch" placeholder="Ara…" class="grow">
+      <select id="libSort">
+        <option value="read">Son okunan</option>
+        <option value="new">En yeni</option>
+        <option value="title">Başlık</option>
+      </select>
+    </div>
+    <div id="libStats" class="muted small"></div>
+    <div id="libList"></div>
+  </div>
+  <div class="card">
+    <h2>Yedek</h2>
+    <p class="muted small" style="margin-top:0">Kütüphane bu tarayıcının içinde saklanır. Tarayıcı verileri silinirse gider; arada bir yedek al.</p>
+    <div class="row">
+      <button id="bExport">Yedeği indir (.json)</button>
+      <button id="bImport">Yedekten geri yükle</button>
+      <input type="file" id="importIn" accept=".json,application/json" hidden>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AYARLAR ================= -->
+<section id="tab-settings" class="tab">
+  <div id="stage-preview-holder"></div>
+  <div class="card">
+    <h2>Renk temaları</h2>
+    <p class="muted small" style="margin-top:-6px">Hepsi okunaklılık için ölçüldü (WCAG kontrast oranı). Seçtikten sonra aşağıdan renkleri tek tek değiştirebilirsin.</p>
+    <div id="themeList" class="themes"></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>Hız ve gösterim</h2>
+      <div class="set"><label>Hız (kelime/dakika)</label><input type="range" data-k="wpm" min="60" max="1500" step="10"><span class="v"></span></div>
+      <div class="set"><label>Aynı anda gösterilen kelime</label><input type="range" data-k="chunk" min="1" max="4" step="1"><span class="v"></span></div>
+      <div class="set"><label>Yavaş başla (ısınma)</label><input type="checkbox" data-k="rampUp"></div>
+      <div class="set"><label>Isınma süresi (kelime)</label><input type="range" data-k="rampWords" min="3" max="60" step="1"><span class="v"></span></div>
+      <div class="set"><label>Başlamadan 3-2-1 say</label><input type="checkbox" data-k="countdown"></div>
+      <div class="set"><label>Durunca geri sar (kelime)</label><input type="range" data-k="rewindOnPause" min="0" max="20" step="1"><span class="v"></span></div>
+    </div>
+
+    <div class="card">
+      <h2>Duraklamalar <span class="muted small">(normal sürenin katı)</span></h2>
+      <div class="set"><label>Virgül, noktalı virgül</label><input type="range" data-k="commaPause" min="1" max="4" step="0.1"><span class="v"></span></div>
+      <div class="set"><label>Cümle sonu (. ! ?)</label><input type="range" data-k="sentencePause" min="1" max="5" step="0.1"><span class="v"></span></div>
+      <div class="set"><label>Paragraf sonu</label><input type="range" data-k="paraPause" min="1" max="8" step="0.1"><span class="v"></span></div>
+      <div class="set"><label>Uzun kelimede yavaşla</label><input type="checkbox" data-k="longWordPause"></div>
+      <div class="set"><label>Uzun kelime sınırı (harf)</label><input type="range" data-k="longWordLen" min="5" max="15" step="1"><span class="v"></span></div>
+      <div class="set"><label>Sayılarda yavaşla</label><input type="checkbox" data-k="numberPause"></div>
+    </div>
+
+    <div class="card">
+      <h2>Görünüm</h2>
+      <div class="set"><label>Odak rengi (gölge / harf)</label><input type="color" data-k="focusColor"></div>
+      <div class="set"><label>Odak stili</label>
+        <select data-k="focusStyle">
+          <option value="block">Arkada renkli blok (harf renksiz)</option>
+          <option value="glow">Arkada renkli gölge (harf renksiz)</option>
+          <option value="color">Sadece renk</option><option value="bold">Renk + kalın</option>
+          <option value="underline">Renk + altı çizili</option><option value="box">Renk + vurgu şeridi</option>
+        </select></div>
+      <div class="set"><label>Bloktaki harfin rengi</label>
+        <select data-k="focusTextMode">
+          <option value="auto">Otomatik (en okunaklı)</option>
+          <option value="same">Yazı rengiyle aynı</option>
+          <option value="custom">Özel renk →</option>
+        </select>
+        <input type="color" data-k="focusTextColor"></div>
+      <div class="set"><label>Gölge yoğunluğu (%)</label><input type="range" data-k="glowStrength" min="15" max="100" step="5"><span class="v"></span></div>
+      <div class="set"><label>Yazı rengi</label><input type="color" data-k="textColor"></div>
+      <div class="set"><label>Arka plan</label><input type="color" data-k="stageBg"></div>
+      <div class="set"><label>Odak işareti</label>
+        <select data-k="marker">
+          <option value="triangle">Üçgenler</option><option value="line">İnce çizgiler</option><option value="none">Yok</option>
+        </select></div>
+    </div>
+
+    <div class="card">
+      <h2>Yazı</h2>
+      <div class="set"><label>Yazı tipi</label>
+        <select data-k="fontFamily">
+          <option value="Poppins, 'Segoe UI', sans-serif">Poppins</option>
+          <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Times New Roman', serif">Times New Roman</option>
+          <option value="Consolas, 'Courier New', monospace">Consolas (eşit genişlik)</option>
+          <option value="'Comic Sans MS', 'Comic Sans', sans-serif">Comic Sans (disleksi dostu)</option>
+        </select></div>
+      <div class="set"><label>Yazı boyutu</label><input type="range" data-k="fontSize" min="24" max="140" step="2"><span class="v"></span></div>
+      <div class="set"><label>Yazı kalınlığı</label>
+        <select data-k="fontWeight">
+          <option value="400">Normal</option><option value="600">Yarı kalın</option>
+          <option value="700">Kalın</option><option value="800">Çok kalın</option>
+        </select></div>
+      <div class="set"><label>Altta cümleyi göster</label><input type="checkbox" data-k="showContext"></div>
+    </div>
+  </div>
+  <div class="row"><button class="danger" id="bResetSettings">Ayarları varsayılana döndür</button></div>
+</section>
+</main>
+
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

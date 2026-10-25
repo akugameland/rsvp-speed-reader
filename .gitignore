@@ -1,0 +1,7 @@
+# Kutuphane yedekleri metin icerir, depoya girmesin
+*.json
+hizli-okuma-yedek-*
+Thumbs.db
+desktop.ini
+__pycache__/
+*.pyc
